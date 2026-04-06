@@ -58,6 +58,10 @@ vim .env
 | RUST_SERVER_PORT | Query ポート |
 | UPDATE_INTERVAL  | 更新間隔（秒） |
 
+## Discord セットアップ
+
+詳しい Discord Bot の作成手順は `docs/discord-setup.md` を参照してください。
+
 ## Run
 
 ```bash
