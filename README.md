@@ -92,10 +92,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 sudo cp systemd/rustbot.service.example /etc/systemd/system/rustbot.service
-sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
 sudo systemctl enable rustbot
 sudo systemctl start rustbot
 ```
+
+- このサンプルは `/opt/rust-srvstatus-bot` 配下に配置する前提です。
+- 別のディレクトリに置く場合は、`systemd/rustbot.service.example` の `WorkingDirectory` / `EnvironmentFile` / `ExecStart` を実際のパスに合わせてください。
 
 ## Notes
 
