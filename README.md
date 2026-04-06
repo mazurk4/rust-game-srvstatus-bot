@@ -1,12 +1,14 @@
 # Rust SrvStatus Bot
 
+[![Python tests](https://github.com/mazurk4/rust-srvstatus-bot/actions/workflows/python-tests.yml/badge.svg)](https://github.com/mazurk4/rust-srvstatus-bot/actions/workflows/python-tests.yml)
+
 Rustサーバーのステータスを取得して BOTのステータス欄にログイン人数を表示する Bot です。
-チャンネルへのダウン通知、ログイン人数投稿機能は今後対応予定です。
+チャンネルへのサーバーダウン通知投稿、ログイン人数投稿機能は今後対応予定です。
 
 ## ✨ Features
 
 - A2S による Rust サーバー情報取得
-- Discord ステータス欄にプレイヤー数を表示
+- Discord ステータス欄にプレイヤー数 / 起動中 / ワイプ中 / Offline を表示
 - Docker / systemd 両対応
 - シンプルで軽量
 
@@ -110,3 +112,9 @@ sudo systemctl start rustbot
 - Rust の Query ポートは UDP です。
 - `server.queryport` を使用してください（例: `28017`）。
 - `localhost` で取得できない場合はグローバル IP を試してください。
+- 実行中のプロセス検出には Linux の `ps` を使います。
+- Discord ステータス表示例:
+  - `👥 12/200`
+  - `⚙️ Starting`
+  - `🔧 Wipe in progress`
+  - `🔴 Offline`
