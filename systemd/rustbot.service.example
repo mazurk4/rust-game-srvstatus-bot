@@ -1,0 +1,13 @@
+[Unit]
+Description=Rust Discord Status Bot
+After=network.target
+
+[Service]
+User=rustbot
+WorkingDirectory=/opt/rust-status-bot
+EnvironmentFile=/opt/rust-status-bot/.env
+ExecStart=/opt/rust-status-bot/venv/bin/python -m bot.bot
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
