@@ -1,9 +1,20 @@
-# Rust SrvStatus Bot
+# Rust Game SrvStatus Bot
 
-[![Python tests](https://github.com/mazurk4/rust-srvstatus-bot/actions/workflows/python-tests.yml/badge.svg)](https://github.com/mazurk4/rust-srvstatus-bot/actions/workflows/python-tests.yml)
+[![Python tests](https://github.com/mazurk4/rust-game-srvstatus-bot/actions/workflows/python-tests.yml/badge.svg)](https://github.com/mazurk4/rust-game-srvstatus-bot/actions/workflows/python-tests.yml)
+[![codecov](https://codecov.io/gh/mazurk4/rust-game-srvstatus-bot/branch/main/graph/badge.svg)](https://codecov.io/gh/mazurk4/rust-game-srvstatus-bot)
+[![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-Rustサーバーのステータスを取得して BOTのステータス欄にログイン人数を表示する Bot です。
-チャンネルへのサーバーダウン通知投稿、ログイン人数投稿機能は今後対応予定です。
+A Discord bot that retrieves Rust game server status using A2S protocol and displays player count in the bot's status bar.  
+Rust サーバーのステータスを取得して Discord Bot のステータス欄にログイン人数を表示する Python 製ボットです。シンプルで軽量、Docker / systemd 対応。
+
+## ✨ Features
+
+- A2S による Rust サーバー情報取得
+- Discord ステータス欄にプレイヤー数 / 起動中 / ワイプ中 / Offline を表示
+- Docker / systemd 両対応
+- シンプルで軽量
 
 ## ✨ Features
 

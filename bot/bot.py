@@ -3,20 +3,31 @@ import discord
 import asyncio
 import socket
 import subprocess
+import logging
+import os
 from .config import *
+
+# ログ設定
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
 
-def get_a2s_info():
-    try:
-        return a2s.info((RUST_SERVER_HOST, RUST_SERVER_PORT), timeout=3)
-    except (socket.timeout, ConnectionRefusedError, OSError):
-        return None
-    except Exception as e:
-        print(f"[A2S ERROR] {e}")
-        return None
+def get_a2s_info(retries=3, delay=1):
+    for attempt in range(retries):
+        try:
+            return a2s.info((RUST_SERVER_HOST, RUST_SERVER_PORT), timeout=3)
+        except (socket.timeout, ConnectionRefusedError, OSError) as e:
+            logger.warning(f"A2S query attempt {attempt + 1} failed: {e}")
+            if attempt < retries - 1:
+                asyncio.sleep(delay)
+        except Exception as e:
+            logger.error(f"A2S query error: {e}")
+            return None
+    logger.error("A2S query failed after all retries")
+    return None
 
 
 def get_process_list():
@@ -29,14 +40,18 @@ def get_process_list():
         )
         return result.stdout
     except subprocess.CalledProcessError as e:
-        print(f"[PS ERROR] {e}")
+        logger.error(f"PS command failed: {e}")
         return ""
     except Exception as e:
-        print(f"[PS ERROR] {e}")
+        logger.error(f"PS error: {e}")
         return ""
 
 
 def parse_process_status(process_output: str):
+    # ファイルベースの検出（環境変数定義時のみ）
+    if WIPE_FLAG_FILE and os.path.exists(WIPE_FLAG_FILE):
+        return "wipe"
+
     if not process_output:
         return None
 
@@ -104,7 +119,7 @@ def format_status_text(server_info):
 async def update_status():
     await client.wait_until_ready()
 
-    print("Status loop started")
+    logger.info("Status loop started")
 
     while not client.is_closed():
         loop = asyncio.get_event_loop()
@@ -116,16 +131,16 @@ async def update_status():
                 status=discord.Status.online,
                 activity=discord.Game(name=text)
             )
-            print(f"[UPDATE] {text}")
+            logger.info(f"Status updated: {text}")
         except Exception as e:
-            print(f"[DISCORD ERROR] {e}")
+            logger.error(f"Discord update error: {e}")
 
         await asyncio.sleep(UPDATE_INTERVAL)
 
 
 @client.event
 async def on_ready():
-    print(f"Logged in as {client.user}")
+    logger.info(f"Logged in as {client.user}")
     client.loop.create_task(update_status())
 
 
