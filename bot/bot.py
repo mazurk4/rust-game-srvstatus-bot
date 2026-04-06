@@ -1,6 +1,7 @@
 import a2s
 import discord
 import asyncio
+import socket
 from .config import *
 
 intents = discord.Intents.default()
@@ -9,46 +10,49 @@ client = discord.Client(intents=intents)
 
 def get_server_info():
     try:
-        info = a2s.info((RUST_SERVER_HOST, RUST_SERVER_PORT))
+        info = a2s.info((RUST_SERVER_HOST, RUST_SERVER_PORT), timeout=3)
         return {
-            "name": info.server_name,
+            "online": True,
             "players": info.player_count,
             "max_players": info.max_players,
-            "map": info.map_name,
-            "ping": round(info.ping * 1000, 2),
+        }
+    except (socket.timeout, ConnectionRefusedError, OSError):
+        return {
+            "online": False,
+            "players": 0,
+            "max_players": 0,
         }
     except Exception as e:
         print(f"[ERROR] {e}")
-        return None
+        return {
+            "online": False,
+            "players": 0,
+            "max_players": 0,
+        }
 
 
 async def update_status():
     await client.wait_until_ready()
-    channel = client.get_channel(CHANNEL_ID)
 
-    message = None
+    print("Status loop started")
 
     while not client.is_closed():
-        info = get_server_info()
+        loop = asyncio.get_event_loop()
+        status = await loop.run_in_executor(None, get_server_info)
 
-        if info:
-            content = (
-                f"🎮 **{info['name']}**\n"
-                f"👥 {info['players']} / {info['max_players']}\n"
-                f"🗺️ {info['map']}\n"
-                f"📡 {info['ping']} ms"
-            )
+        if status["online"]:
+            text = f"👥 {status['players']}/{status['max_players']}"
         else:
-            content = "❌ Server Offline"
+            text = "🔴 Offline"
 
         try:
-            if message is None:
-                message = await channel.send(content)
-            else:
-                await message.edit(content=content)
+            await client.change_presence(
+                status=discord.Status.online,
+                activity=discord.Game(name=text)
+            )
+            print(f"[UPDATE] {text}")
         except Exception as e:
             print(f"[DISCORD ERROR] {e}")
-            message = None
 
         await asyncio.sleep(UPDATE_INTERVAL)
 
