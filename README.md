@@ -20,11 +20,8 @@ Rustサーバーのステータスを取得して BOTのステータス欄にロ
 
 ## Requirements
 
-- Linux 環境（`ps` コマンドを利用しています）
 - Python 3.12+
-- `requirements.txt` の依存関係
-- テストを実行する場合は `requirements-dev.txt` の追加依存
-- `.env` に Discord トークンなどの環境変数を設定
+
 
 ## Setup
 
@@ -112,7 +109,7 @@ sudo systemctl start rustbot
 - Rust の Query ポートは UDP です。
 - `server.queryport` を使用してください（例: `28017`）。
 - `localhost` で取得できない場合はグローバル IP を試してください。
-- 実行中のプロセス検出には Linux の `ps` を使います。
+- 実行中のプロセス検出には Linux の `ps` を使います。また、プロセス名に`wipe`文字列を含むをワイプ実行検知としています。
 - Discord ステータス表示例:
   - `👥 12/200`
   - `⚙️ Starting`
