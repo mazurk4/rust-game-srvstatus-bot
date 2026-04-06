@@ -18,6 +18,7 @@ Rustサーバーのステータスを取得して BOTのステータス欄にロ
 
 ## Requirements
 
+- Linux 環境（`ps` コマンドを利用しています）
 - Python 3.12+
 - `requirements.txt` の依存関係
 - テストを実行する場合は `requirements-dev.txt` の追加依存
