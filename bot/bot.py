@@ -40,10 +40,6 @@ def parse_process_status(process_output: str):
     if not process_output:
         return None
 
-    lower_output = process_output.lower()
-    if "wipe" in lower_output:
-        return "wipe"
-
     for line in process_output.splitlines():
         line = line.strip()
         if not line:
@@ -54,7 +50,10 @@ def parse_process_status(process_output: str):
             continue
 
         elapsed_str, args = parts
-        if "rustdedicated" not in args.lower():
+        lower_args = args.lower()
+        if "wipe.sh" in lower_args:
+            return "wipe"
+        if "rustdedicated" not in lower_args:
             continue
 
         try:

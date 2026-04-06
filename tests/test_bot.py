@@ -78,7 +78,7 @@ def test_get_server_info_returns_none_on_error():
 
 def test_parse_process_status_returns_wipe_when_wipe_process_exists():
     bot = import_bot_with_fakes(lambda addr: DummyInfo())
-    output = "  120 sh -c ./RustDedicated +wipeDayofWeek 3 +wipeHourofDay 3\n"
+    output = "  120 sh -c /home/rustgsmadm/wipe.sh\n"
 
     assert bot.parse_process_status(output) == "wipe"
 
