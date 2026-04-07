@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 User=rustbot
-WorkingDirectory=/opt/rust-srvstatus-bot
-EnvironmentFile=/opt/rust-srvstatus-bot/.env
-ExecStart=/opt/rust-srvstatus-bot/venv/bin/python -m bot.bot
+WorkingDirectory=/opt/rust-game-srvstatus-bot
+EnvironmentFile=/opt/rust-game-srvstatus-bot/.env
+ExecStart=/opt/rust-game-srvstatus-bot/venv/bin/python -m bot.bot
 Restart=always
 
 [Install]
