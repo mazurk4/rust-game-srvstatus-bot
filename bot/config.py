@@ -8,5 +8,13 @@ RUST_SERVER_PORT = int(os.getenv("RUST_SERVER_PORT", "28017"))
 
 UPDATE_INTERVAL = int(os.getenv("UPDATE_INTERVAL", "30"))
 
+_BOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # プロセス検出用（オプション）
 WIPE_FLAG_FILE = os.getenv("WIPE_FLAG_FILE")  # ワイプ中を示すファイルパス
+
+# メンテナンスフラグファイル（bot/ と同階層に maintenance.txt を置くと有効）
+MAINTENANCE_FLAG_FILE = os.getenv(
+    "MAINTENANCE_FLAG_FILE",
+    os.path.join(_BOT_DIR, "maintenance.txt"),
+)

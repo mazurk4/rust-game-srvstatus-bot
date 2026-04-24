@@ -48,6 +48,10 @@ def get_process_list():
 
 
 def parse_process_status(process_output: str):
+    # メンテナンスフラグファイルが存在する場合はメンテナンス中
+    if MAINTENANCE_FLAG_FILE and os.path.exists(MAINTENANCE_FLAG_FILE):
+        return "maintenance"
+
     # ファイルベースの検出（環境変数定義時のみ）
     if WIPE_FLAG_FILE and os.path.exists(WIPE_FLAG_FILE):
         return "wipe"
@@ -87,6 +91,8 @@ def get_server_info(process_output: str | None = None):
         process_output = get_process_list()
 
     process_status = parse_process_status(process_output)
+    if process_status == "maintenance":
+        return {"status": "maintenance"}
     if process_status == "wipe":
         return {"status": "wipe"}
     if process_status == "starting":
@@ -108,6 +114,8 @@ def get_server_info(process_output: str | None = None):
 def format_status_text(server_info):
     if server_info is None:
         return "🔴 Offline"
+    if server_info.get("status") == "maintenance":
+        return "🛠️ Maintenance"
     if server_info.get("status") == "wipe":
         return "🔧 Wipe in progress"
     if server_info.get("status") == "starting":
