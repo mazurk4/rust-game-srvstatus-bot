@@ -1,4 +1,5 @@
 import importlib
+import json
 import sys
 import types
 
@@ -59,12 +60,15 @@ def test_get_server_info_returns_parsed_data():
         return DummyInfo()
 
     bot = import_bot_with_fakes(fake_info)
+    bot.get_rcon_server_info = lambda: {"queue": 3, "joining": 2}
     assert bot.get_server_info(process_output="") == {
         "name": "MyServer",
         "players": 5,
         "max_players": 20,
         "map": "my_map",
         "ping": round(0.123 * 1000, 2),
+        "queue": 3,
+        "joining": 2,
     }
 
 
@@ -103,3 +107,66 @@ def test_format_status_text_for_special_states():
     assert bot.format_status_text(None) == "🔴 Offline"
     assert bot.format_status_text({"status": "wipe"}) == "🔧 Wipe in progress"
     assert bot.format_status_text({"status": "starting"}) == "⚙️ Starting"
+
+
+def test_format_status_text_includes_queue_and_joining():
+    bot = import_bot_with_fakes(lambda addr: DummyInfo())
+
+    assert bot.format_status_text({
+        "players": 5,
+        "max_players": 20,
+        "queue": 3,
+        "joining": 2,
+    }) == "👥 5/20 | Queue 3 | Joining 2"
+
+
+def test_parse_rcon_server_info():
+    bot = import_bot_with_fakes(lambda addr: DummyInfo())
+
+    assert bot.parse_rcon_server_info(
+        '{"Players":5,"MaxPlayers":20,"Queued":3,"Joining":2}'
+    ) == {"queue": 3, "joining": 2}
+    assert bot.parse_rcon_server_info("not json") is None
+
+
+def test_get_rcon_server_info_requests_serverinfo():
+    bot = import_bot_with_fakes(lambda addr: DummyInfo())
+    bot.RCON_HOST = "127.0.0.1"
+    bot.RCON_PORT = 28016
+    bot.RCON_PASSWORD = "pass/word"
+    bot.RCON_TIMEOUT = 4
+
+    class FakeConnection:
+        def __init__(self):
+            self.sent = None
+            self.closed = False
+
+        def send(self, message):
+            self.sent = json.loads(message)
+
+        def recv(self):
+            return json.dumps({
+                "Identifier": 1001,
+                "Message": '{"Queued":3,"Joining":2}',
+            })
+
+        def close(self):
+            self.closed = True
+
+    connection = FakeConnection()
+
+    def fake_connection_factory(url, timeout):
+        assert url == "ws://127.0.0.1:28016/pass%2Fword"
+        assert timeout == 4
+        return connection
+
+    assert bot.get_rcon_server_info(fake_connection_factory) == {
+        "queue": 3,
+        "joining": 2,
+    }
+    assert connection.sent == {
+        "Identifier": 1001,
+        "Message": "serverinfo",
+        "Name": "WebRcon",
+    }
+    assert connection.closed is True

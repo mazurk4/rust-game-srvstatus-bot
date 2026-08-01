@@ -1,10 +1,12 @@
 import a2s
 import discord
 import asyncio
+import json
 import socket
 import subprocess
 import logging
 import os
+from urllib.parse import quote
 from .config import *
 
 # ログ設定
@@ -45,6 +47,62 @@ def get_process_list():
     except Exception as e:
         logger.error(f"PS error: {e}")
         return ""
+
+
+def parse_rcon_server_info(message: str):
+    try:
+        data = json.loads(message)
+        return {
+            "queue": max(0, int(data["Queued"])),
+            "joining": max(0, int(data["Joining"])),
+        }
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as e:
+        logger.warning(f"Invalid RCON serverinfo response: {e}")
+        return None
+
+
+def get_rcon_server_info(connection_factory=None):
+    if not RCON_PASSWORD:
+        return None
+
+    if connection_factory is None:
+        try:
+            from websocket import create_connection
+            connection_factory = create_connection
+        except ImportError as e:
+            logger.warning(f"RCON client is unavailable: {e}")
+            return None
+
+    host = f"[{RCON_HOST}]" if ":" in RCON_HOST else RCON_HOST
+    password = quote(RCON_PASSWORD, safe="")
+    url = f"ws://{host}:{RCON_PORT}/{password}"
+    identifier = 1001
+    connection = None
+
+    try:
+        connection = connection_factory(url, timeout=RCON_TIMEOUT)
+        connection.send(json.dumps({
+            "Identifier": identifier,
+            "Message": "serverinfo",
+            "Name": "WebRcon",
+        }))
+
+        for _ in range(10):
+            response = json.loads(connection.recv())
+            if response.get("Identifier") == identifier:
+                return parse_rcon_server_info(response.get("Message", ""))
+
+        logger.warning("RCON serverinfo response was not received")
+    except Exception as e:
+        logger.warning(f"RCON query failed: {e}")
+    finally:
+        if connection is not None:
+            try:
+                connection.close()
+            except Exception as e:
+                logger.warning(f"RCON connection close failed: {e}")
+
+    return None
 
 
 def parse_process_status(process_output: str):
@@ -102,13 +160,18 @@ def get_server_info(process_output: str | None = None):
     if info is None:
         return None
 
-    return {
+    server_info = {
         "name": info.server_name,
         "players": info.player_count,
         "max_players": info.max_players,
         "map": info.map_name,
         "ping": round(info.ping * 1000, 2),
     }
+    rcon_info = get_rcon_server_info()
+    if rcon_info is not None:
+        server_info.update(rcon_info)
+
+    return server_info
 
 
 def format_status_text(server_info):
@@ -120,7 +183,11 @@ def format_status_text(server_info):
         return "🔧 Wipe in progress"
     if server_info.get("status") == "starting":
         return "⚙️ Starting"
-    return f"👥 {server_info['players']}/{server_info['max_players']}"
+
+    text = f"👥 {server_info['players']}/{server_info['max_players']}"
+    if "queue" in server_info and "joining" in server_info:
+        text += f" | Queue {server_info['queue']} | Joining {server_info['joining']}"
+    return text
 
 
 async def update_status():
