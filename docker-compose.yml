@@ -1,9 +1,7 @@
-version: "3.8"
-
 services:
-  rustbot:
+  rust-game-srvstatus-bot:
     build: .
-    container_name: rust-srvstatus-bot
+    container_name: rust-game-srvstatus-bot
     restart: unless-stopped
     network_mode: host
     env_file:

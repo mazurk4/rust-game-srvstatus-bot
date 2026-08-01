@@ -30,4 +30,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Docker image
-        run: docker build -t rust-srvstatus-bot .
+        run: docker build -t rust-game-srvstatus-bot .

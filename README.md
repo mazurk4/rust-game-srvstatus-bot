@@ -12,7 +12,7 @@ Rust サーバーのステータスを取得して Discord Bot のステータ�
 ## ✨ Features
 
 - A2S による Rust サーバー情報取得
-- Discord ステータス欄にプレイヤー数 / 起動中 / ワイプ中 / メンテナンス中 / Offline を表示
+- Discord ステータス欄にプレイヤー数 / Queue / Joining / 起動中 / ワイプ中 / メンテナンス中 / Offline を表示
 - Docker / systemd 両対応
 - シンプルで軽量
 
@@ -64,6 +64,10 @@ vim .env
 | CHANNEL_ID       | 投稿先チャンネル |
 | RUST_SERVER_HOST | Rust サーバーの IP / ホスト |
 | RUST_SERVER_PORT | Query ポート |
+| RCON_HOST         | Rust WebRCON の IP / ホスト（未指定時は `RUST_SERVER_HOST`） |
+| RCON_PORT         | Rust WebRCON ポート（デフォルト: `28016`） |
+| RCON_PASSWORD     | Rust WebRCON パスワード（Queue / Joining 表示に必要） |
+| RCON_TIMEOUT      | Rust WebRCON タイムアウト秒数（デフォルト: `3`） |
 | UPDATE_INTERVAL  | 更新間隔（秒） |
 | WIPE_FLAG_FILE   | ワイプ中を示すファイルパス（オプション） |
 
@@ -100,23 +104,26 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -e .
 
-sudo cp systemd/rustbot.service.example /etc/systemd/system/rustbot.service
+sudo cp systemd/rust-game-srvstatus-bot.service.example /etc/systemd/system/rust-game-srvstatus-bot.service
 sudo systemctl daemon-reload
-sudo systemctl enable rustbot
-sudo systemctl start rustbot
+sudo systemctl enable rust-game-srvstatus-bot
+sudo systemctl start rust-game-srvstatus-bot
 ```
 
 - このサンプルは `/opt/rust-game-srvstatus-bot` 配下に配置する前提です。
-- 別のディレクトリに置く場合は、`systemd/rustbot.service.example` の `WorkingDirectory` / `EnvironmentFile` / `ExecStart` を実際のパスに合わせてください。
+- 別のディレクトリに置く場合は、`systemd/rust-game-srvstatus-bot.service.example` の `WorkingDirectory` / `EnvironmentFile` / `ExecStart` を実際のパスに合わせてください。
 
 ## Notes
 
 - Rust の Query ポートは UDP です。
 - `server.queryport` を使用してください（例: `28017`）。
+- Queue / Joining の取得には WebRCON が必要です。Rust サーバーを `+rcon.web 1 +rcon.port 28016 +rcon.password "安全なパスワード"` 付きで起動し、`.env` の `RCON_*` を設定してください。
+- `RCON_PASSWORD` が未設定、またはRCONへの接続に失敗した場合は、従来どおりA2Sのプレイヤー数だけを表示します。
 - `localhost` で取得できない場合はグローバル IP を試してください。
 - 実行中のプロセス検出には Linux の `ps` を使います。また、プロセス名に`wipe`文字列を含むをワイプ実行検知としています。
 - Discord ステータス表示例:
   - `👥 12/200`
+  - `👥 200/200 | Queue 12 | Joining 3`
   - `⚙️ Starting`
   - `🔧 Wipe in progress`
   - `🛠️ Maintenance`
@@ -139,10 +146,10 @@ Docker で運用している場合は `docker exec` で操作します。
 
 ```bash
 # メンテナンス開始
-docker exec rust-srvstatus-bot touch /app/bot/maintenance.txt
+docker exec rust-game-srvstatus-bot touch /app/bot/maintenance.txt
 
 # メンテナンス終了
-docker exec rust-srvstatus-bot rm /app/bot/maintenance.txt
+docker exec rust-game-srvstatus-bot rm /app/bot/maintenance.txt
 ```
 
 環境変数 `MAINTENANCE_FLAG_FILE` でパスを変更することもできます。

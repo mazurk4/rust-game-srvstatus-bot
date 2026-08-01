@@ -15,6 +15,7 @@ authors = [
 dependencies = [
     "discord.py==2.7.1",
     "python-a2s==1.4.1",
+    "websocket-client>=1.8,<2",
 ]
 
 [project.optional-dependencies]
