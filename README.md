@@ -69,6 +69,7 @@ vim .env
 | RCON_PASSWORD     | Rust WebRCON パスワード（RCON による人数・定員・Queue / Joining の取得に必要） |
 | RCON_TIMEOUT      | Rust WebRCON タイムアウト秒数（デフォルト: `3`） |
 | UPDATE_INTERVAL  | 更新間隔（秒） |
+| STARTING_DURATION | RustDedicated 起動後に `⚙️ Starting` と表示する秒数（デフォルト: `300`）。マップ生成・ロード中に RCON が応答して `👥 0/N` と表示される場合は延ばしてください |
 | WIPE_FLAG_FILE   | ワイプ中を示すファイルパス（オプション） |
 
 ## Discord セットアップ

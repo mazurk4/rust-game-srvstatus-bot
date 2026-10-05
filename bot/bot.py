@@ -5,6 +5,7 @@ import json
 import socket
 import subprocess
 import logging
+import time
 import os
 from urllib.parse import quote
 from .config import *
@@ -24,7 +25,7 @@ def get_a2s_info(retries=3, delay=1):
         except (socket.timeout, ConnectionRefusedError, OSError) as e:
             logger.warning(f"A2S query attempt {attempt + 1} failed: {e}")
             if attempt < retries - 1:
-                asyncio.sleep(delay)
+                time.sleep(delay)
         except Exception as e:
             logger.error(f"A2S query error: {e}")
             return None
@@ -49,19 +50,23 @@ def get_process_list():
         return ""
 
 
+def parse_rcon_count(data: dict, key: str) -> int:
+    value = data[key]
+    # bool は int のサブクラスのため明示的に除外し、文字列・小数・Infinity も受け付けない
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{key} must be an integer: {value!r}")
+    return max(0, value)
+
+
 def parse_rcon_server_info(message: str):
     try:
         data = json.loads(message)
-        server_info = {
-            "players": max(0, int(data["Players"])),
-            "max_players": max(0, int(data["MaxPlayers"])),
-            "queue": max(0, int(data["Queued"])),
-            "joining": max(0, int(data["Joining"])),
+        return {
+            "players": parse_rcon_count(data, "Players"),
+            "max_players": parse_rcon_count(data, "MaxPlayers"),
+            "queue": parse_rcon_count(data, "Queued"),
+            "joining": parse_rcon_count(data, "Joining"),
         }
-        for source, target in (("Hostname", "name"), ("Map", "map")):
-            if source in data:
-                server_info[target] = data[source]
-        return server_info
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as e:
         logger.warning(f"Invalid RCON serverinfo response: {e}")
         return None
@@ -144,7 +149,7 @@ def parse_process_status(process_output: str):
         except ValueError:
             continue
 
-        if elapsed <= 300:
+        if elapsed <= STARTING_DURATION:
             return "starting"
 
     return None

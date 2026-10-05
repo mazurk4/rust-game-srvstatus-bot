@@ -13,6 +13,9 @@ RCON_TIMEOUT = int(os.getenv("RCON_TIMEOUT", "3"))
 
 UPDATE_INTERVAL = int(os.getenv("UPDATE_INTERVAL", "30"))
 
+# RustDedicated の起動からこの秒数以内は「起動中」と表示する
+STARTING_DURATION = int(os.getenv("STARTING_DURATION", "300"))
+
 _BOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # プロセス検出用（オプション）
