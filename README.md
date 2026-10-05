@@ -6,12 +6,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
 
-A Discord bot that retrieves Rust game server status using A2S protocol and displays player count in the bot's status bar.  
+A Discord bot that retrieves Rust game server status using WebRCON (with A2S fallback) and displays player count in the bot's status bar.
 Rust サーバーのステータスを取得して Discord Bot のステータス欄にログイン人数を表示する Python 製ボットです。シンプルで軽量、Docker / systemd 対応。
 
 ## ✨ Features
 
-- A2S による Rust サーバー情報取得
+- WebRCON による Rust サーバーの人数・定員・Queue・Joining の取得（取得できない場合は A2S に切り替え）
 - Discord ステータス欄にプレイヤー数 / Queue / Joining / 起動中 / ワイプ中 / メンテナンス中 / Offline を表示
 - Docker / systemd 両対応
 - シンプルで軽量
@@ -66,9 +66,10 @@ vim .env
 | RUST_SERVER_PORT | Query ポート |
 | RCON_HOST         | Rust WebRCON の IP / ホスト（未指定時は `RUST_SERVER_HOST`） |
 | RCON_PORT         | Rust WebRCON ポート（デフォルト: `28016`） |
-| RCON_PASSWORD     | Rust WebRCON パスワード（Queue / Joining 表示に必要） |
+| RCON_PASSWORD     | Rust WebRCON パスワード（RCON による人数・定員・Queue / Joining の取得に必要） |
 | RCON_TIMEOUT      | Rust WebRCON タイムアウト秒数（デフォルト: `3`） |
 | UPDATE_INTERVAL  | 更新間隔（秒） |
+| STARTING_DURATION | RustDedicated 起動後に `⚙️ Starting` と表示する秒数（デフォルト: `300`）。マップ生成・ロード中に RCON が応答して `👥 0/N` と表示される場合は延ばしてください |
 | WIPE_FLAG_FILE   | ワイプ中を示すファイルパス（オプション） |
 
 ## Discord セットアップ
@@ -117,7 +118,8 @@ sudo systemctl start rust-game-srvstatus-bot
 
 - Rust の Query ポートは UDP です。
 - `server.queryport` を使用してください（例: `28017`）。
-- Queue / Joining の取得には WebRCON が必要です。Rust サーバーを `+rcon.web 1 +rcon.port 28016 +rcon.password "安全なパスワード"` 付きで起動し、`.env` の `RCON_*` を設定してください。
+- 人数・定員・Queue / Joining は WebRCON の `serverinfo` からまとめて取得します。人数には `Players`、定員には `MaxPlayers` を使い、Queue / Joining は別表示します。Rust サーバーを `+rcon.web 1 +rcon.port 28016 +rcon.password "安全なパスワード"` 付きで起動し、`.env` の `RCON_*` を設定してください。
+- RCON で取得できた場合は A2S に問い合わせません。A2S の Query ポートが応答しなくても人数を表示できます。
 - `RCON_PASSWORD` が未設定、またはRCONへの接続に失敗した場合は、従来どおりA2Sのプレイヤー数だけを表示します。
 - `localhost` で取得できない場合はグローバル IP を試してください。
 - 実行中のプロセス検出には Linux の `ps` を使います。また、プロセス名に`wipe`文字列を含むをワイプ実行検知としています。

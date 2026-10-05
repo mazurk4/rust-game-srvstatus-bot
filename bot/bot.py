@@ -5,6 +5,7 @@ import json
 import socket
 import subprocess
 import logging
+import time
 import os
 from urllib.parse import quote
 from .config import *
@@ -24,7 +25,7 @@ def get_a2s_info(retries=3, delay=1):
         except (socket.timeout, ConnectionRefusedError, OSError) as e:
             logger.warning(f"A2S query attempt {attempt + 1} failed: {e}")
             if attempt < retries - 1:
-                asyncio.sleep(delay)
+                time.sleep(delay)
         except Exception as e:
             logger.error(f"A2S query error: {e}")
             return None
@@ -49,12 +50,22 @@ def get_process_list():
         return ""
 
 
+def parse_rcon_count(data: dict, key: str) -> int:
+    value = data[key]
+    # bool は int のサブクラスのため明示的に除外し、文字列・小数・Infinity も受け付けない
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{key} must be an integer: {value!r}")
+    return max(0, value)
+
+
 def parse_rcon_server_info(message: str):
     try:
         data = json.loads(message)
         return {
-            "queue": max(0, int(data["Queued"])),
-            "joining": max(0, int(data["Joining"])),
+            "players": parse_rcon_count(data, "Players"),
+            "max_players": parse_rcon_count(data, "MaxPlayers"),
+            "queue": parse_rcon_count(data, "Queued"),
+            "joining": parse_rcon_count(data, "Joining"),
         }
     except (KeyError, TypeError, ValueError, json.JSONDecodeError) as e:
         logger.warning(f"Invalid RCON serverinfo response: {e}")
@@ -138,7 +149,7 @@ def parse_process_status(process_output: str):
         except ValueError:
             continue
 
-        if elapsed <= 300:
+        if elapsed <= STARTING_DURATION:
             return "starting"
 
     return None
@@ -156,6 +167,10 @@ def get_server_info(process_output: str | None = None):
     if process_status == "starting":
         return {"status": "starting"}
 
+    rcon_info = get_rcon_server_info()
+    if rcon_info is not None:
+        return rcon_info
+
     info = get_a2s_info()
     if info is None:
         return None
@@ -167,10 +182,6 @@ def get_server_info(process_output: str | None = None):
         "map": info.map_name,
         "ping": round(info.ping * 1000, 2),
     }
-    rcon_info = get_rcon_server_info()
-    if rcon_info is not None:
-        server_info.update(rcon_info)
-
     return server_info
 
 
